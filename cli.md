@@ -42,6 +42,10 @@ Undo configuration of software:
 
     $ dotman unconfigure <name>
 
+Run a generic task:
+
+    $ dotman run <name>
+
 Debug software installation and configuration:
 
     $ dotman debug <name>
