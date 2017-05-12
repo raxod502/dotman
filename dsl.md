@@ -1,4 +1,4 @@
-# DSL description
+# DSL specification
 
 To configure Dotman, place a file called `Dotfile.rb` at the root of
 your dotfiles repository. When `dotman` is invoked from the command
