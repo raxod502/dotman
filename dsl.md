@@ -9,7 +9,8 @@ the appropriate actions to take from there.
 ## DSL elements
 
 The top level of `Dotfile.rb` should contain some number of calls to
-the `target` and `task` DSL elements.
+the `target` and `task` DSL elements. These may optionally be wrapped
+in `with_os` blocks.
 
 ### `target`
 
@@ -387,6 +388,7 @@ the surrounding scope.
 
 #### Usable in
 
+* top level
 * `install`
 * `configure`
 * `run`
