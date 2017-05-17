@@ -3,146 +3,176 @@
 class MalformedDotfileError < StandardError; end
 
 module OS
-  TYPES = [:arch_linux, :macos]
+  SYMBOLS = [:arch_linux, :macos]
 
-  def matches(os)
-    return os == :macos # FIXME: make this check the OS
+  def self.parse(os_spec, context)
+    os_spec = [os_spec] unless os_spec.is_a? Array
+    os_spec.each do |os|
+      raise MalformedDotfileError(
+              "#{context}with_os argument '#{os}' is not a symbol"
+            ) unless os.is_a? Symbol
+      raise MalformedDotfileError(
+              "#{context}unknown with_os argument '#{os}'"
+            ) unless SYMBOLS.include? os
+    end
+    return os_spec
+  end
+
+  def self.matches(os_spec)
+    return true # FIXME
   end
 end
 
 class Dotfile
   def initialize(filename)
     @filename = filename
-    @runnables = []
+    @runnables = {}
+    @systems = []
+    @context = "#{@filename}: "
     instance_eval File.read(filename)
   end
 
   private
 
   def target(name, &block)
-    # FIXME: check for duplicate targets
-    @runnables << Target.new(name, "#{@filename}: target #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}target name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of target '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Target.new(
+      name, [], "#{@context}target #{name}: ", &block)
   end
 
   def task(name, &block)
-    # FIXME: check for duplicates
-    @runnables << Task.new(name, "#{@filename}: task #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}task name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of task '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Task.new(
+      name, [], "#{@context}target #{name}: ", &block)
   end
 
-  def with_os(os, &block)
-    # FIXME: check for duplicates?
-    @runnables << OSWrapperRunnable.new(
-      os, "#{@filename}: with_os #{os}: ", &block)
+  def with_os(os_spec, &block)
+    RunnableOSWrapper.handle(@systems + [OS.parse(os_spec, @context)],
+                             @runnables,
+                             "#{@context}with_os #{os_spec}: ",
+                             &block)
   end
 end
 
 class Runnable
-  def initialize(diagnostic_context, &block)
-    @runnables = []
-    @diagnostic_context = diagnostic_context
+  def initialize(context, &block)
+    @runnables = {}
+    @context = context
     instance_eval &block
   end
 end
 
 class StandardRunnable < Runnable
-  def initialize(name, diagnostic_context, &block)
+  def initialize(name, systems, context, &block)
     @name = name
+    @systems = systems
     @desc = nil
     @homepage = nil
     @min_version = nil
     @options = {}
-    super
+    super context, &block
   end
 
   private
 
   def desc(desc)
-    if @desc.nil?
-      if desc.is_a? String
-        @desc = desc
-      else
-        raise MalformedDotfileError(@diagnostic_context +
-                                    "desc '#{desc}' is not a string")
-      end
-    else
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "more than one desc specified")
-    end
+    raise MalformedDotfileError(
+            "#{@context}more than one desc specified"
+          ) unless @desc.nil?
+    raise MalformedDotfileError(
+            "#{@context}desc '#{desc}' is not a string"
+          ) unless desc.is_a? String
+    @desc = desc
   end
 
   def homepage(homepage)
-    if @homepage.nil?
-      if homepage.is_a? String
-        @homepage = homepage
-      else
-        raise MalformedDotfileError(@diagnostic_context +
-                                    "homepage '#{homepage}' is not a string")
-      end
-    else
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "more than one homepage specified")
-    end
+    raise MalformedDotfileError(
+            "#{@context}more than one homepage specified"
+          ) unless @homepage.nil?
+    raise MalformedDotfileError(
+            "#{@context}homepage '#{homepage}' is not a string"
+          ) unless homepage.is_a? String
+    @homepage = homepage
   end
 
   def min_version(min_version)
-    if @min_version.nil?
-      if min_version.is_a? String
-        begin
-          @min_version = Gem::Version.new(min_version)
-        rescue ArgumentError
-          raise MalformedDotfileError(@diagnostic_context +
-                                      "malformed min_version '#{min_version}'")
-        end
-      else
-        raise MalformedDotfileError(@diagnostic_context +
-                                    "min_version '#{min_version}' " +
-                                    "is not a string")
-      end
-    else
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "more than one min_version specified")
+    raise MalformedDotfileError(
+            "#{@context}more than one min_version specified"
+          ) unless @min_version.nil?
+    raise MalformedDotfileError(
+            "#{@context}min_version '#{min_version}' is not a string"
+          ) unless min_version.is_a? String
+    begin
+      @min_version = Gem::Version.new(min_version)
+    rescue ArgumentError
+      raise MalformedDotfileError("#{@context}malformed min_version '#{min_version}'")
     end
   end
 
   def option(option)
-    if option.is_a? String
-      # Option "windowed" is off by default; option "no-windowed" is
-      # on by default. But we refer to both of them as "windowed"
-      # internally.
-      default_value = option.start_with? "no-"
-      option.slice! "no-"
-      if @options.key? option
-        raise MalformedDotfileError(@diagnostic_context +
-                                    "option '#{option}' specified " +
-                                    "more than once")
-      else
-        options[option] = default_value
-      end
-    else
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "option '#{option}' is not a string")
-    end
+    raise MalformedDotfileError(
+            "#{@context}option '#{option}' is not a string"
+          ) unless option.is_a? String
+    # Option "windowed" is off by default; option "no-windowed" is
+    # on by default. But we refer to both of them as "windowed"
+    # internally.
+    default_value = option.start_with? "no-"
+    option.slice! "no-"
+    raise MalformedDotfileError(
+            "#{@context}option '#{option}' specified more than once"
+          ) if @options.key? option
+    @options[option] = default_value
   end
 
   def target(name, &block)
-    Target.new(name, @diagnostic_context + "target #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}target name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of target '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Target.new(
+      name, @systems, "#{@context}target #{name}: ", &block)
   end
 
   def task(name, &block)
-    Task.new(name, @diagnostic_context + "task #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}task name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of task '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Task.new(
+      name, @systems, "#{@context}target #{name}: ", &block)
+  end
+
+  def with_os(os_spec, &block)
+    RunnableOSWrapper.handle(@systems + [OS.parse(os_spec, @context)],
+                             @runnables,
+                             "#{@context}with_os #{os_spec}: ",
+                             &block)
   end
 end
 
 class Target < StandardRunnable
-  def initialize(name, diagnostic_context, &block)
+  def initialize(name, systems, context, &block)
     @test = nil
     @install = nil
     @configure = nil
     super
-    if @install.nil?
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "no install stanza provided")
-    end
+    raise MalformedDotfileError(
+            "#{@context}no install stanza provided"
+          ) if @install.nil?
   end
 
   private
@@ -160,16 +190,13 @@ class Target < StandardRunnable
   end
 end
 
-
-
 class Task < StandardRunnable
-  def initialize(name, diagnostic_context, &block)
+  def initialize(name, systems, context, &block)
     @run = nil
     super
-    if @run.nil?
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "no run stanza provided")
-    end
+    raise MalformedDotfileError(
+            "#{@context}no run stanza provided"
+          ) if @run.nil?
   end
 
   private
@@ -179,33 +206,43 @@ class Task < StandardRunnable
   end
 end
 
-# FIXME: operate on the runnable list directly, to avoid the need for
-# this class
-class OSWrapperRunnable < Runnable
-  def initialize(os, diagnostic_context, &block)
-    if os.is_a? Symbol
-      if OS::TYPES.include? os
-        @os = os
-      else
-        raise MalformedDotfileError(@diagnostic_context +
-                                    "unknown with_os type '#{os}'")
-      end
-    else
-      raise MalformedDotfileError(@diagnostic_context +
-                                  "with_os argument '#{os}' not a symbol")
-    end
+class RunnableOSWrapper
+  def self.handle(systems, runnables, context, &block)
+    @systems = systems
+    @context = context
+    @runnables = runnables
   end
 
   private
 
   def target(name, &block)
-    Target.new(name, @diagnostic_context + "target #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}target name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of target '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Target.new(
+      name, @systems, "#{@context}target #{name}: ", &block)
   end
 
   def task(name, &block)
-    Task.new(name, @diagnostic_context + "task #{name}: ", &block)
+    raise MalformedDotfileError(
+            "#{@context}task name '#{name}' is not a string"
+          ) unless name.is_a? String
+    raise MalformedDotfileError(
+            "#{@context}duplicate declaration of task '#{name}'"
+          ) if @runnables.key? name
+    @runnables[name] = Task.new(
+      name, @systems, "#{@context}target #{name}: ", &block)
   end
 
+  def with_os(os_spec, &block)
+    RunnableOSWrapper.handle(@systems + [OS.parse(os_spec, @context)],
+                             @runnables,
+                             "#{@context}with_os #{os_spec}: ",
+                             &block)
+  end
 end
 
 class Stanza
