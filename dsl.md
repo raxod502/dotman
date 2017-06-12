@@ -276,14 +276,16 @@ Dotman manages package managers, symlinking, and other tasks.
 
 #### Takes arguments
 
-The argument is a map of keywords to filenames. All except `:run` are
-optional. One can also pass a single block, to specify just `:run`.
+The argument is a map of keywords to filenames or arrays. All except
+`:run` are optional. One can also pass a single filename, to specify
+just `:run`.
 
 The arguments have the same meaning as in `block`, except that
 `:check` should exit non-zero when the code needs to run, rather than
 returning false.
 
-In `test`, this method instead takes a single filename, for `:check`.
+In `test`, this method instead takes a single filename or array, for
+`:check`.
 
 #### Usable in
 
