@@ -568,11 +568,12 @@ module StanzaItemContainer
       raise MalformedDotfileError.new(
               "#{@context}#{name} target '#{target}' is not a string"
             ) unless target.is_a? String
+      raw_target = target
       source, target = Pathname.new(source), Pathname.new(target)
       source = Pathname.new(dotfiles) + source unless source.absolute?
       target = Pathname.new(target_dir) + target unless target.absolute?
       @actions << type.new(
-        source.to_s, target.to_s,
+        source.to_s, raw_target.to_s,
         "#{@context}#{name} #{target}: ")
     end
   end
