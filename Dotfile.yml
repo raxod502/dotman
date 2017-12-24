@@ -1,0 +1,555 @@
+components:
+  cmake:
+    description: 'Cross-platform C++ build manager.'
+    homepage: 'https://cmake.org/'
+    os: [ macos ]
+    defaults:
+      min-version: '3.7'
+    targets:
+      test:
+
+        - type: binary
+          file: 'cmake'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'cmake'
+
+  coreutils:
+    description: 'Basic shell utilities of the GNU operating system.'
+    homepage: 'https://www.gnu.org/software/coreutils/'
+    os: [ macos ]
+    defaults:
+      min-version: '8.27'
+    targets:
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'coreutils'
+
+  emacs:
+    description: 'Extensible, customizable, self-documenting text editor.'
+    homepage: 'https://www.gnu.org/software/emacs/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '25.1'
+    targets:
+      test:
+
+        - type: binary
+          file: 'emacs'
+
+        - type: binary
+          file: 'emacsclient'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: option
+              name: 'windowed'
+              contains:
+
+                - type: cask
+                  name: 'emacs'
+
+                - type: symlink
+                  source: 'scripts/emacs/emacs-wrapper'
+                  link-dir: bin
+
+            - type: option
+              name: 'windowed'
+              value: false
+              contains:
+
+                - type: brew
+                  name: 'emacs'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: option
+              name: 'windowed'
+              contains:
+
+                - type: pacman
+                  name: 'emacs'
+
+            - type: option
+              name: 'windowed'
+              value: false
+              contains:
+
+                - type: pacman
+                  name: 'emacs-nox'
+
+      configure:
+
+        - type: remove
+          file: '.emacs'
+
+        - type: remove
+          file: '.emacs.el'
+
+        - type: remove
+          file: '.emacs.elc'
+
+        - type: symlink
+          source: 'init.el'
+          link: '.emacs.d/init.el'
+
+        - type: template
+          source: 'templates/init.local.el'
+
+        - type: symlink
+          source: 'init.local.el'
+          source-dir: local
+          link: '.emacs.d/init.local.el'
+
+        - type: symlink
+          source: 'versions.el'
+          link: '.emacs.d/straight/versions/radian.el'
+
+        - type: template
+          source: null
+          link: 'versions.el'
+          link-dir: local
+
+        - type: symlink
+          source: 'versions.el'
+          source-dir: local
+          link: '.emacs.d/straight/versions/radian-local.el'
+
+        - type: dependency
+          name: 'cmake'
+          class: optional
+          reason: 'CMake is required for intelligent C++ development in Emacs.'
+
+        - type: dependency
+          name: 'leiningen'
+          class: optional
+          reason: 'Leiningen is required for interactive Clojure development in Emacs.'
+
+        - type: dependency
+          name: 'libclang'
+          class: optional
+          reason: 'Libclang is required for intelligent C++ development in Emacs.'
+
+        - type: dependency
+          name: 'racket'
+          class: optional
+          reason: 'The Racket runtime is required for interactive Racket development in Emacs.'
+
+        - type: dependency
+          name: 'ripgrep'
+          class: optional
+          reason: 'Ripgrep is required for fast multi-file search in Emacs.'
+
+  exa:
+    description: 'A modern replacement for ls.'
+    homepage: 'https://the.exa.website/'
+    os: [ macos ]
+    defaults:
+      min-version: '0.7.0'
+    targets:
+      test:
+
+        type: binary
+        file: 'exa'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'exa'
+
+  git:
+    description: 'The definitive distributed revision control system.'
+    homepage: 'https://git-scm.com/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '2.12.2'
+    targets:
+      test:
+
+        - type: binary
+          file: 'git'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'git'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: pacman
+              name: 'git'
+
+      configure:
+
+        - type: symlink
+          source: '.gitconfig'
+
+        - type: template
+          source: 'templates/.gitconfig.local'
+
+        - type: symlink
+          source: '.gitconfig.local'
+          source_dir: local
+
+        - type: symlink
+          source: '.gitexclude'
+
+  hub:
+    description: 'Git wrapper that adds Github integration.'
+    homepage: 'https://hub.github.com/'
+    os: [ macos ]
+    defaults:
+      min-version: '2.3.0'
+    targets:
+      test:
+
+        - type: binary
+          file: 'hub'
+          skip-prefix: 'git version .+'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'hub'
+              flags: [ 'devel' ]
+
+  java:
+    description: 'The Java programming language.'
+    homepage: 'https://www.java.com/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '1.6'
+    targets:
+      test:
+
+        - type: script
+          file: '/usr/libexec/java_home'
+          args: [ '--failfast' ]
+
+        - type: binary
+          file: 'javac'
+          args: [ '-version' ]
+
+        - type: binary
+          file: 'java'
+          args: [ '-version' ]
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: cask
+              name: 'java'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: pacman
+              name: 'jdk8-openjdk'
+
+  leiningen:
+    description: 'Build manager for Clojure. Includes the Clojure language.'
+    homepage: 'https://leiningen.org/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '2.7.1'
+    targets:
+      test:
+
+        - type: temporarily-moving
+          file: '.lein/profiles.clj'
+          contains:
+
+            - type: binary
+              file: 'lein'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'leiningen'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: yaourt
+              name: 'leiningen'
+
+      configure:
+
+        - type: symlink
+          source: 'profiles.clj'
+          link: '.lein/profiles.clj'
+
+  libclang:
+    description: 'C library for parsing C++ source code.'
+    homepage: 'https://clang.llvm.org/doxygen/group__CINDEX.html'
+    os: [ macos ]
+    defaults:
+      min-version: '3.9'
+    targets:
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'llvm'
+
+  racket:
+    description: 'The Racket programming language.'
+    homepage: 'https://racket-lang.org/'
+    os: [ macos ]
+    defaults:
+      min-version: '6.6'
+    targets:
+      test:
+
+        - type: binary
+          file: 'racket'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: cask
+              name: 'racket'
+
+  reattach-to-user-namespace:
+    description: 'Wrapper program to fix clipboard access in Tmux on macOS.'
+    homepage: 'https://github.com/ChrisJohnsen/tmux-MacOSX-pasteboard'
+    os: [ macos ]
+    defaults:
+      min-version: '2.4'
+    targets:
+      test:
+
+        - type: binary
+          file: 'reattach-to-user-namespace'
+
+      install:
+
+        - type: brew
+          name: 'reattach-to-user-namespace'
+
+  tmux:
+    description: 'Terminal multiplexer. Replacement for GNU screen.'
+    homepage: 'https://tmux.github.io/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '2.2'
+    targets:
+      test:
+
+        - type: binary
+          file: 'tmux'
+          args: [ '-V' ]
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'tmux'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: pacman
+              name: 'tmux'
+
+      configure:
+
+        - type: symlink
+          source: '.tmux.conf'
+
+        - type: template
+          source: 'templates/.tmux.local.conf'
+
+        - type: symlink
+          source: '.tmux.local.conf'
+          source-dir: local
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: dependency
+              name: 'reattach-to-user-namespace'
+              class: 'recommended'
+              reason: 'Radian Tmux uses reattach-to-user-namespace to make clipboard access work inside Tmux.'
+
+  vim:
+    description: 'Ubiquitous, stable, highly efficient text editor.'
+    homepage: 'https://neovim.io/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '0.1.6'
+    targets:
+      test:
+
+        - type: binary
+          file: 'nvim'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'neovim'
+              tap: 'neovim/neovim'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: pacman
+              name: 'neovim'
+
+      configure:
+
+        - type: symlink
+          source: 'init.vim'
+          link: '.config/nvim/init.vim'
+
+  wget:
+    description: 'GNU file downloader. More convenient than curl.'
+    homepage: 'https://www.gnu.org/software/wget/'
+    os: [ macos ]
+    defaults:
+      min-version: '1.18'
+    targets:
+      test:
+
+        - type: binary
+          file: 'wget'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'wget'
+
+  zsh:
+    description: 'Modern shell. Replaces bash.'
+    homepage: 'http://www.zsh.org/'
+    os: [ arch, macos ]
+    defaults:
+      min-version: '5.2'
+    targets:
+      test:
+
+        - type: binary
+          file: 'zsh'
+
+      install:
+
+        - type: os
+          name: macos
+          contains:
+
+            - type: brew
+              name: 'zsh'
+
+        - type: os
+          name: arch
+          contains:
+
+            - type: pacman
+              name: 'zsh'
+
+      configure:
+
+        - type: symlink
+          source: '.zshrc'
+
+        - type: template
+          source: 'templates/.zshrc.local'
+
+        - type: dependency
+          name: 'exa'
+          class: recommended
+          reason: 'Radian Zsh uses Exa to significantly improve its ls aliases if it is available.'
+
+        - type: dependency
+          name: 'git'
+          class: optional
+          reason: 'Radian Zsh defines a large number of useful aliases for Git.'
+
+        - type: dependency
+          name: 'zplug'
+          class: recommended
+          reason: 'Radian Zsh uses zplug to load its third-party plugins.'
+
+    contains:
+
+      secure-compinit-path:
+        description: 'Make zsh stop complaining about permissions on compinit files.'
+        targets:
+          run:
+
+            - type: module
+              file: 'scripts/zsh/secure-compinit-path.rb'
+
+            - type: dependency
+              name: 'zsh'
+
+      set-login-shell:
+        description: 'Set zsh as the login shell.'
+        targets:
+          run:
+
+            - type: module
+              file: 'scripts/zsh/set-login-shell.rb'
+
+            - type: dependency
+              name: 'zsh'
