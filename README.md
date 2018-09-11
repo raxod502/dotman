@@ -42,7 +42,7 @@ running from scratch:
 
 A Dotman configuration is a directory, probably a Git repository, with
 a subdirectory called `packages`. The `packages` subdirectory has a
-number of Python scripts, with script `configure-emacs.py`
+number of Python scripts, with script `configure_emacs.py`
 corresponding to a package called `configure-emacs` for example.
 
 Package metadata is defined by setting global variables in the script,
@@ -56,3 +56,16 @@ define a global `install()` function. It's that simple!
 
 Helpful functions like `install_homebrew_package` can be obtained by
 importing the `dotman` module.
+
+## Usage
+
+The main command is `dotman install`, which takes a list of packages
+whose scripts should be run. The `-u` or `--upgrade` flag causes the
+scripts to be run in "upgrade mode"; `dotman upgrade` is an alias for
+`dotman install -u`.
+
+Packages are skipped if they were installed already by Dotman (or, for
+`-u`, if they were upgraded in the last 24 hours). This can be
+overridden by the `-f` or `--force` flag. The same can be achieved for
+dependencies of the named packages with the `-F` or `--force-all`
+flag.
