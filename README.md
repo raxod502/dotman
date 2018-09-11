@@ -1,4 +1,12 @@
-**Dotman**: one package manager to rule them all.
+## Deprecated
+
+Dotman has been deprecated. Instead of using it to manage system
+adminstration, I do things manually and keep a separate log for each
+machine, which records all system administration operations done
+outside of `~/files`, inside which live my dotfiles and personal
+documents.
+
+The remainder of this README is included for historical value only.
 
 ## Idea
 
